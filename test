@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personnalisation 3D</title>
+    <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" type="module"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button, input {
+            margin: 10px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Visualiseur 3D -->
+    <model-viewer id="bookViewer"
+                  src="https://baptistevcr.github.io/3Dviewer/Architexturebook.glb"
+                  ar
+                  ar-modes="webxr scene-viewer quick-look"
+                  camera-controls
+                  tone-mapping="neutral"
+                  poster="poster.webp"
+                  shadow-intensity="1"
+                  alt="Livre personnalisable">
+    </model-viewer>
+
+    <!-- Contrôles pour importer et manipuler l'image -->
+    <div class="controls">
+        <h3>Personnaliser le livre :</h3>
+        
+        <!-- Boutons pour importer des images pour chaque zone -->
+        <label>1ère de couverture : </label>
+        <input type="file" id="coverInput" accept="image/*">
+        <button onclick="applyTexture('cover')">Appliquer 1ère de couverture</button>
+        <br>
+
+        <label>4ème de couverture : </label>
+        <input type="file" id="backInput" accept="image/*">
+        <button onclick="applyTexture('back')">Appliquer 4ème de couverture</button>
+        <br>
+
+        <label>Tranche : </label>
+        <input type="file" id="spineInput" accept="image/*">
+        <button onclick="applyTexture('spine')">Appliquer la tranche</button>
+        <br>
+    </div>
+
+    <!-- Canvas pour redimensionner et ajuster l'image -->
+    <canvas id="imageCanvas" width="1024" height="512"></canvas>
+
+    <script>
+        let img = new Image();
+        let canvas = document.getElementById('imageCanvas');
+        let ctx = canvas.getContext('2d');
+        let currentZone = 'cover';  // Par défaut, la zone est la couverture
+
+        // Associer chaque input à son image respective
+        const inputs = {
+            'cover': document.getElementById('coverInput'),
+            'back': document.getElementById('backInput'),
+            'spine': document.getElementById('spineInput')
+        };
+
+        // Gestion des uploads pour chaque partie du livre
+        for (let zone in inputs) {
+            inputs[zone].addEventListener('change', function (e) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    img.src = event.target.result;
+                    img.onload = function () {
+                        currentZone = zone;
+                        drawImage();
+                    };
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            });
+        }
+
+        // Dessiner l'image sur le canvas (zone sélectionnée)
+        function drawImage() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+
+        // Appliquer la texture redimensionnée et ajustée
+        function applyTexture(zone) {
+            const modelViewer = document.querySelector("#bookViewer");
+
+            // Convertir le canvas en texture (dataURL)
+            const textureUrl = canvas.toDataURL('image/png');
+
+            modelViewer.model.materials.forEach((material) => {
+                switch (zone) {
+                    case 'cover':
+                        if (material.name === "cover") {
+                            material.pbrMetallicRoughness.baseColorTexture.setURI(textureUrl);
+                        }
+                        break;
+                    case 'back':
+                        if (material.name === "back") {
+                            material.pbrMetallicRoughness.baseColorTexture.setURI(textureUrl);
+                        }
+                        break;
+                    case 'spine':
+                        if (material.name === "spine") {
+                            material.pbrMetallicRoughness.baseColorTexture.setURI(textureUrl);
+                        }
+                        break;
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
